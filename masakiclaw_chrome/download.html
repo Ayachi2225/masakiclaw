@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MasakiClaw 下载</title>
+    <link rel="stylesheet" href="download.css">
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>MasakiClaw</h1>
+        <p id="summary">等待任务</p>
+      </header>
+      <button id="choose">选择文件夹并写入</button>
+      <button id="stopBatch" class="secondary" hidden>停止批量采集</button>
+      <progress id="progress" max="1" value="0"></progress>
+      <pre id="log"></pre>
+    </main>
+    <script src="download.js"></script>
+  </body>
+</html>

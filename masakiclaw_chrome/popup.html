@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MasakiClaw</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <h1>MasakiClaw</h1>
+        <p>采集评论区图片并生成结构化索引</p>
+      </header>
+
+      <section id="privacyNotice" class="notice" hidden>
+        <p>MasakiClaw 会读取你主动采集的知乎页面评论区图片，并将图片和 JSON 索引保存到你选择的本地文件夹。插件不会把数据发送给开发者服务器。启用 AI 视觉理解时，图片会发送到你配置的视觉模型 API。</p>
+        <button id="acceptPrivacyNotice" type="button">我知道了</button>
+      </section>
+
+      <div id="mainControls" hidden>
+      <section class="field">
+        <label>采集模式</label>
+        <div class="segmented">
+          <label class="choice"><input type="radio" name="mode" value="current" checked><span>当前页</span></label>
+          <label class="choice"><input type="radio" name="mode" value="url"><span>指定 URL</span></label>
+          <label class="choice"><input type="radio" name="mode" value="batch"><span>批量</span></label>
+        </div>
+      </section>
+
+      <section id="targetUrlField" class="field" hidden>
+        <label for="targetUrl">目标 URL</label>
+        <textarea id="targetUrl" rows="3">https://zhuanlan.zhihu.com/p/2049455800079356223</textarea>
+      </section>
+
+      <section id="batchSourcesField" class="field" hidden>
+        <label>批量来源</label>
+        <label class="choice"><input class="batchSource" type="checkbox" value="answer" checked><span>回答</span></label>
+        <label class="choice"><input class="batchSource" type="checkbox" value="post" checked><span>文章</span></label>
+        <label class="choice"><input class="batchSource" type="checkbox" value="pin" checked><span>想法</span></label>
+      </section>
+
+      <section class="field grid">
+        <label for="maxImages">最大图片数</label>
+        <input id="maxImages" type="number" min="1" value="80">
+        <label class="choice"><input id="unlimitedImages" type="checkbox"><span>不限制图片数</span></label>
+      </section>
+
+      <section class="field">
+        <label class="choice"><input id="autoScroll" type="checkbox" checked><span>自动滚动加载评论区</span></label>
+      </section>
+
+      <section class="field">
+        <label class="choice"><input id="allowSecondaryReplies" type="checkbox"><span>实验：尝试采集次级评论区图片</span></label>
+      </section>
+
+      <section class="field">
+        <label class="choice"><input id="dedupeEnabled" type="checkbox"><span>是否开启查重</span></label>
+      </section>
+
+      <section class="field">
+        <label class="choice"><input id="aiEnabled" type="checkbox"><span>启用 AI 视觉理解与重命名</span></label>
+      </section>
+
+      <section id="aiConfigFields" hidden>
+        <section class="field grid">
+          <label for="visionApiKey">视觉模型 API Key</label>
+          <input id="visionApiKey" type="password" autocomplete="off" placeholder="留空则尝试使用本地已保存 key">
+        </section>
+
+        <section class="field">
+          <label class="choice"><input id="saveAiKey" type="checkbox" checked><span>保存 API Key（默认）</span></label>
+          <label class="choice"><input id="plainSaveAiKey" type="checkbox"><span>明文保存到本机扩展存储</span></label>
+          <p id="plainSaveHint" class="hint" hidden>明文保存新 API Key 时不需要 6 位密码，API Key 会保存在本机 Chrome 扩展存储中。</p>
+        </section>
+
+        <section class="field grid">
+          <label for="visionPassword">6 位解密密码</label>
+          <input id="visionPassword" type="password" maxlength="6" autocomplete="off" placeholder="保存加密 key 或解锁已保存 key 时填写">
+        </section>
+
+        <section class="field grid">
+          <label for="visionBaseUrl">视觉模型 API Base URL</label>
+          <input id="visionBaseUrl" type="url" value="https://api.openai.com/v1">
+        </section>
+
+        <section class="field grid">
+          <label for="visionModel">视觉模型</label>
+          <input id="visionModel" type="text" value="gpt-4o-mini">
+        </section>
+      </section>
+
+      <section class="field grid">
+        <label for="scrollSteps">滚动次数</label>
+        <input id="scrollSteps" type="number" min="0" max="80" value="24">
+        <label class="choice"><input id="scrollUntilBottom" type="checkbox"><span>滚动到底</span></label>
+      </section>
+
+      <button id="start">开始采集评论图片</button>
+      <button id="stopBatch" class="secondary" hidden>停止批量采集</button>
+      <pre id="status" aria-live="polite"></pre>
+      </div>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>
