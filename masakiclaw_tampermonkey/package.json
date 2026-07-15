@@ -1,0 +1,11 @@
+{
+  "name": "masakiclaw-tampermonkey",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "node scripts/build.cjs",
+    "test": "node --test",
+    "check": "node --check masakiclaw.user.js"
+  }
+}
