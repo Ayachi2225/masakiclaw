@@ -4,7 +4,7 @@
 下面是简单介绍，如果想看详细介绍可以看[for chrome](./masakiclaw_chrome/README.md)/[for edge](./masakiclaw_edge/README.md)
 
 ## 安装
-Chrome和Edge可以直接在插件市场搜索MasakiClaw安装，也可以用[github源码](https://github.com/Ayachi2225/masakiclaw.git)本地构建[在Chrome中安装](./masakiclaw_chrome/README.md#在zai-chrome-zhong-jiazhai)/[在Edge中安装](./masakiclaw_edge/README.md#在-edge-中加载)，后续计划支持篡改猴脚本
+Chrome和Edge可以直接在插件市场搜索MasakiClaw安装，也可以用[github源码](https://github.com/Ayachi2225/masakiclaw.git)本地构建[在Chrome中安装](./masakiclaw_chrome/README.md#在-chrome-中加载)/[在Edge中安装](./masakiclaw_edge/README.md#在-edge-中加载)，后续计划支持篡改猴脚本
 ## 模式介绍
 主要有三种模式
 ### 当前页面模式
