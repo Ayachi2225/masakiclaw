@@ -1,3 +1,0 @@
-# The Userscript Uses a Recoverable Controller and Capability Adapters
-
-Tampermonkey has no extension service worker, so one initiating Zhihu tab owns a persisted serial Collection Job while foreground worker tabs discover or collect one target at a time and exchange results through userscript storage. Browser-specific behaviour is isolated behind tab, storage, request, and archive seams; interrupted jobs are offered for explicit recovery rather than restarting automatically. This preserves the extension's orchestration semantics without pretending that userscript tabs provide a permanent background process.
