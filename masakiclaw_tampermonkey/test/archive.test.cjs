@@ -6,7 +6,13 @@ global.GM = {
   getValue: async (key, fallback) => values.has(key) ? values.get(key) : fallback,
   setValue: async (key, value) => { values.set(key, value); }
 };
-const { createArchiveWriter, buildVolumeIndex } = require("../src/archive.cjs");
+const {
+  buildSimilarityReport,
+  buildVolumeIndex,
+  createArchiveWriter,
+  getSimilarityReportFilename,
+  getTaskImageFolderName
+} = require("../src/archive.cjs");
 
 test("directory archive writes a Chrome-compatible task once across recovery", async () => {
   values.clear();
@@ -27,6 +33,8 @@ test("directory archive writes a Chrome-compatible task once across recovery", a
   assert.equal(index.tasks[0].images[0].status, "skipped_duplicate");
   assert.equal(index.tasks[0].images[0].normalizedOriginalUrl, "https://pic.zhimg.com/existing.jpg");
   assert.equal(index.tasks[0].images[0].duplicate.matchedBy, "normalized_original_url");
+  assert.equal(index.tasks[0].imageFolder, "2026-1-1");
+  assert.equal(directory.files.has("task-job.log"), false);
 });
 
 test("each independent ZIP volume index references only files in that volume", () => {
@@ -42,7 +50,7 @@ test("each independent ZIP volume index references only files in that volume", (
   assert.deepEqual(second.tasks[0].images.map((image) => image.relativePath), ["two/b.jpg"]);
 });
 
-test("ZIP archive includes index, log, and report", async () => {
+test("ZIP archive omits logs and an empty similarity report", async () => {
   values.clear();
   let downloaded;
   const previousDocument = global.document;
@@ -57,12 +65,40 @@ test("ZIP archive includes index, log, and report", async () => {
     const binary = Buffer.from(await downloaded.arrayBuffer()).toString("latin1");
     assert.equal(completed.kind, "zip");
     assert.match(binary, /images\.json/);
-    assert.match(binary, /task-zip-job\.log/);
-    assert.match(binary, /similar-zip-job\.md/);
+    assert.doesNotMatch(binary, /\.log/);
+    assert.doesNotMatch(binary, /\.md/);
   } finally {
     global.document = previousDocument;
     URL.createObjectURL = previousCreate;
   }
+});
+
+test("folder names match the Chromium date and content-type convention", () => {
+  assert.equal(getTaskImageFolderName({
+    sourcePage: "https://www.zhihu.com/question/1/answer/2",
+    publishedAt: "2026-07-03T12:00:00Z"
+  }), "2026-7-3_answer");
+  assert.equal(getTaskImageFolderName({
+    sourcePage: "https://zhuanlan.zhihu.com/p/123",
+    capturedAt: "2026-07-04T12:00:00Z"
+  }), "2026-7-4_post");
+  assert.equal(getTaskImageFolderName({
+    sourcePage: "https://www.zhihu.com/pin/123",
+    publishedAt: "2026-07-05T12:00:00Z"
+  }), "2026-7-5_pin");
+});
+
+test("similarity reports are only built for matches and have readable names", () => {
+  assert.equal(buildSimilarityReport({ tasks: [{ images: [] }] }), "");
+  const report = buildSimilarityReport({ tasks: [{ images: [{
+    originalUrl: "https://pic.zhimg.com/a.jpg",
+    duplicate: { matchedBy: "visual_similarity", matchedOriginalUrl: "https://pic.zhimg.com/b.jpg", similarity: 98 }
+  }] }] });
+  assert.match(report, /a\.jpg.*b\.jpg.*98%/);
+  assert.equal(
+    getSimilarityReportFilename({ id: "zip-job", updatedAt: "2026-07-23T12:34:56.000Z" }),
+    "similar-2026-07-23_12-34-56-zip-job.md"
+  );
 });
 
 class MemoryDirectory {

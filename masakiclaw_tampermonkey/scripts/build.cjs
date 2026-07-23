@@ -5,6 +5,8 @@ const root = path.resolve(__dirname, "..");
 const repository = path.resolve(root, "..");
 const iconPath = path.join(repository, "masakiclaw_chrome", "icons", "icon-128.png");
 const iconDataUri = `data:image/png;base64,${fs.readFileSync(iconPath).toString("base64")}`;
+const backgroundPath = path.join(repository, "masakiclaw_chrome", "masaki.png");
+const backgroundDataUri = `data:image/png;base64,${fs.readFileSync(backgroundPath).toString("base64")}`;
 const header = `// ==UserScript==
 // @name         MasakiClaw
 // @namespace    https://github.com/Ayachi2225/masakiclaw
@@ -34,5 +36,7 @@ const parts = [
   fs.readFileSync(path.join(root, "src", "worker.cjs"), "utf8"),
   fs.readFileSync(path.join(root, "src", "main.cjs"), "utf8")
 ];
-const output = parts.join("\n\n").replaceAll("__MASAKICLAW_ICON_DATA_URI__", iconDataUri);
+const output = parts.join("\n\n")
+  .replaceAll("__MASAKICLAW_ICON_DATA_URI__", iconDataUri)
+  .replaceAll("__MASAKICLAW_BACKGROUND_DATA_URI__", backgroundDataUri);
 fs.writeFileSync(path.join(root, "masakiclaw.user.js"), output);

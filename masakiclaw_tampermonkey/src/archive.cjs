@@ -9,7 +9,13 @@
   const encoder = new TextEncoder();
   const ZIP_VOLUME_LIMIT = 250 * 1024 * 1024;
 
-  async function createArchiveWriter({ directoryHandle = null, options = {}, onLog = () => {}, volumeLimit = ZIP_VOLUME_LIMIT }) {
+  async function createArchiveWriter({
+    directoryHandle = null,
+    options = {},
+    onLog = () => {},
+    volumeLimit = ZIP_VOLUME_LIMIT,
+    now = () => new Date()
+  }) {
     let index = { schemaVersion: 1, updatedAt: "", tasks: [] };
     const zipFiles = [];
     const history = await GM.getValue(core.DEDUPE_KEY, []);
@@ -24,7 +30,10 @@
         onLog(`跳过已归档目标：${existingTask.sourcePage}`);
         return existingTask;
       }
-      const folder = makeFolder(result, taskId);
+      const folder = getTaskImageFolderName({
+        ...result,
+        capturedAt: result.capturedAt || job.createdAt
+      }, now().toISOString());
       const records = [];
       for (const candidate of result.images || []) {
         if (!options.unlimitedImages && records.length >= Number(options.maxImages || 80)) break;
@@ -47,14 +56,14 @@
         scope: result.scope || "comments",
         imageFolder: folder,
         createdAt: job.createdAt,
-        completedAt: new Date().toISOString(),
+        completedAt: now().toISOString(),
         options: publicOptions(options),
         dedupe: { enabled: options.dedupeEnabled === true },
         ai: { enabled: options.aiEnabled === true, baseUrl: options.visionBaseUrl || "", model: options.visionModel || "" },
         images: records
       };
       index.tasks.push(task);
-      index.updatedAt = new Date().toISOString();
+      index.updatedAt = now().toISOString();
       if (directoryHandle) await writeJson(directoryHandle, "images.json", index);
       if (directoryHandle) await GM.setValue(core.DEDUPE_KEY, dedupe.records().slice(-10000));
       return task;
@@ -121,20 +130,26 @@
     async function complete(job) {
       index.updatedAt = new Date().toISOString();
       await GM.setValue(core.DEDUPE_KEY, dedupe.records().slice(-10000));
+      const jobIndex = {
+        ...index,
+        tasks: index.tasks.filter((task) => task.taskId.startsWith(`${job.id}-`))
+      };
+      const similarityReport = buildSimilarityReport(jobIndex);
+      const reportFilename = getSimilarityReportFilename(job, now().toISOString());
       if (directoryHandle) {
         await writeJson(directoryHandle, "images.json", index);
-        await writeText(directoryHandle, `task-${job.id}.log`, buildLog(index));
-        await writeText(directoryHandle, `similar-${job.id}.md`, buildSimilarityReport(index));
+        if (similarityReport) await writeText(directoryHandle, reportFilename, similarityReport);
         return { kind: "directory", taskCount: index.tasks.length };
       }
       const contentVolumes = splitVolumes(zipFiles, Math.max(1024, volumeLimit - 1024 * 1024));
       const volumes = (contentVolumes.length ? contentVolumes : [[]]).map((volume, volumeIndex) => {
         const localIndex = buildVolumeIndex(index, volume, volumeIndex === 0);
-        return volume.concat([
-          { name: "images.json", data: encoder.encode(JSON.stringify(localIndex, null, 2)) },
-          { name: `task-${job.id}.log`, data: encoder.encode(buildLog(localIndex)) },
-          { name: `similar-${job.id}.md`, data: encoder.encode(buildSimilarityReport(localIndex)) }
+        const files = volume.concat([
+          { name: "images.json", data: encoder.encode(JSON.stringify(localIndex, null, 2)) }
         ]);
+        const localReport = buildSimilarityReport(localIndex);
+        if (localReport) files.push({ name: reportFilename, data: encoder.encode(localReport) });
+        return files;
       });
       for (let indexNumber = 0; indexNumber < volumes.length; indexNumber += 1) {
         const suffix = volumes.length > 1 ? `.part${String(indexNumber + 1).padStart(2, "0")}` : "";
@@ -191,19 +206,55 @@
   function duplicateInfo(claim) { return { matchedBy: claim.kind === "source_url" ? "normalized_original_url" : claim.kind, matchedOriginalUrl: claim.matched?.originalUrl || "", distance: claim.distance, similarity: claim.similarity }; }
   function splitVolumes(files, maxBytes) { const result = []; let part = []; let size = 0; for (const file of files) { if (part.length && size + file.data.length > maxBytes) { result.push(part); part = []; size = 0; } part.push(file); size += file.data.length; } if (part.length) result.push(part); return result; }
   function buildVolumeIndex(sourceIndex, files, includeUnsaved) { const paths = new Set(files.map((file) => file.name)); return { ...sourceIndex, tasks: sourceIndex.tasks.map((task) => ({ ...task, images: (task.images || []).filter((image) => image.status === "downloaded" ? paths.has(image.relativePath) : includeUnsaved) })).filter((task) => task.images.length || includeUnsaved) }; }
-  function makeFolder(result, id) { return `${new Date().toISOString().slice(0, 10)}_${safeName((result.pageTitle || "zhihu").slice(0, 48))}_${id.slice(-6)}`; }
+  function getTaskImageFolderName(task, fallbackTimestamp = "") {
+    const date = new Date(task.publishedAt || task.capturedAt || fallbackTimestamp);
+    const fallbackDate = new Date(fallbackTimestamp);
+    const validDate = Number.isNaN(date.getTime()) ? fallbackDate : date;
+    const datePart = Number.isNaN(validDate.getTime())
+      ? "unknown-date"
+      : `${validDate.getFullYear()}-${validDate.getMonth() + 1}-${validDate.getDate()}`;
+    const sourcePage = String(task.sourcePage || "");
+    const type = /\/pin\/\d+/i.test(sourcePage)
+      ? "pin"
+      : /\/answer\/\d+/i.test(sourcePage)
+        ? "answer"
+        : /zhuanlan\.zhihu\.com\/p\/\d+|\/p\/\d+/i.test(sourcePage)
+          ? "post"
+          : "";
+    return safeName(type ? `${datePart}_${type}` : datePart);
+  }
   function safeName(value) { return String(value || "image").replace(/[\\/:*?"<>|\x00-\x1f]/g, "_").replace(/\s+/g, " ").trim().slice(0, 100) || "image"; }
   function compactHash(value) { let hash = 2166136261; for (const char of value) { hash ^= char.charCodeAt(0); hash = Math.imul(hash, 16777619); } return (hash >>> 0).toString(16).padStart(8, "0"); }
   function stripExtension(value) { return value.replace(/\.[a-z0-9]{1,8}$/i, ""); }
   function extension(value, mime) { return value.match(/\.([a-z0-9]{1,8})$/i)?.[1] || mime.split("/")[1]?.replace("jpeg", "jpg") || "jpg"; }
   function publicOptions(options) { const copy = { ...options }; delete copy.apiKey; delete copy.visionPassword; return copy; }
-  function buildLog(index) { return index.tasks.map((task) => `${task.completedAt}\t${task.sourcePage}\t${task.images.length}`).join("\n") + "\n"; }
-  function buildSimilarityReport(index) { const rows = index.tasks.flatMap((task) => task.images.filter((image) => image.duplicate?.matchedBy === "visual_similarity").map((image) => `- ${image.relativePath || image.originalUrl} ↔ ${image.duplicate.matchedOriginalUrl} (${image.duplicate.similarity || "?"}%)`)); return `# MasakiClaw 相似图片报告\n\n${rows.length ? rows.join("\n") : "未发现视觉相似图片。"}\n`; }
+  function buildSimilarityReport(index) {
+    const rows = index.tasks.flatMap((task) => task.images
+      .filter((image) => image.duplicate?.matchedBy === "visual_similarity")
+      .map((image) => `- ${image.relativePath || image.originalUrl} ↔ ${image.duplicate.matchedOriginalUrl} (${image.duplicate.similarity || "?"}%)`));
+    return rows.length ? `# MasakiClaw 相似图片报告\n\n${rows.join("\n")}\n` : "";
+  }
+  function getSimilarityReportFilename(job, fallbackTimestamp = "") {
+    const completedAt = new Date(job.updatedAt || fallbackTimestamp);
+    const fallbackDate = new Date(fallbackTimestamp);
+    const validDate = Number.isNaN(completedAt.getTime()) ? fallbackDate : completedAt;
+    const timestamp = (Number.isNaN(validDate.getTime()) ? "unknown-time" : validDate.toISOString())
+      .replace(/\.\d{3}Z$/, "")
+      .replace("T", "_")
+      .replace(/:/g, "-");
+    return `similar-${timestamp}-${safeName(job.id || "task")}.md`;
+  }
   async function readIndex(dir) { try { const file = await (await dir.getFileHandle("images.json")).getFile(); const value = JSON.parse(await file.text()); return Array.isArray(value.tasks) ? value : { schemaVersion: 1, updatedAt: "", tasks: [] }; } catch { return { schemaVersion: 1, updatedAt: "", tasks: [] }; } }
   async function writeBlobPath(root, path, blob) { const parts = path.split("/"); const name = parts.pop(); let dir = root; for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: true }); const handle = await dir.getFileHandle(name, { create: true }); const writable = await handle.createWritable(); await writable.write(blob); await writable.close(); }
   async function writeText(root, name, value) { return writeBlobPath(root, name, new Blob([value], { type: "text/plain;charset=utf-8" })); }
   async function writeJson(root, name, value) { return writeText(root, name, JSON.stringify(value, null, 2)); }
   function downloadBlob(blob, name) { const url = URL.createObjectURL(blob); const anchor = document.createElement("a"); anchor.href = url; anchor.download = name; anchor.click(); const timer = setTimeout(() => URL.revokeObjectURL(url), 60000); timer?.unref?.(); }
   function blobToDataUrl(blob) { return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(reader.result); reader.onerror = reject; reader.readAsDataURL(blob); }); }
-  return { createArchiveWriter, buildVolumeIndex };
+  return {
+    buildSimilarityReport,
+    buildVolumeIndex,
+    createArchiveWriter,
+    getSimilarityReportFilename,
+    getTaskImageFolderName
+  };
 });

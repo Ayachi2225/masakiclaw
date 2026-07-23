@@ -14,5 +14,8 @@ test("the built userscript embeds the extension icon in metadata and the floatin
   assert.ok(output.includes("// @icon         data:image/png;base64,"));
   assert.ok(output.includes('<button id="claw" title="MasakiClaw" aria-label="打开 MasakiClaw"><img src="data:image/png;base64,'));
   assert.ok(iconMatches.length >= 2);
+  assert.ok(output.includes("[hidden]{display:none!important}"));
+  assert.ok(output.includes("url(\"data:image/png;base64,"));
   assert.ok(!output.includes("__MASAKICLAW_ICON_DATA_URI__"));
+  assert.ok(!output.includes("__MASAKICLAW_BACKGROUND_DATA_URI__"));
 });

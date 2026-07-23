@@ -5,7 +5,7 @@
 ## Firefox desktop
 
 - PENDING — 安装生成的 userscript，知乎页出现悬浮按钮，Tampermonkey 菜单入口可用。
-- PENDING — 当前页采集生成 ZIP，包含图片、`images.json`、日志和相似图片报告。
+- PENDING — 当前页采集生成 ZIP，包含图片和 `images.json`，不生成日志；仅在发现视觉相似图片时生成相似报告。
 - PENDING — 指定 URL 打开前台目标页，完成后关闭并返回控制页。
 - PENDING — 批量来源串行扫描；停止在当前目标结束后生效。
 - PENDING — 刷新控制页后显示恢复提示，确认后继续。
