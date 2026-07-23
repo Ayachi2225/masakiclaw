@@ -7,7 +7,7 @@
 1. 安装 Tampermonkey。
 2. 打开 `masakiclaw.user.js`，让 Tampermonkey 安装脚本。
 3. 打开任意 `www.zhihu.com` 或 `zhuanlan.zhihu.com` 页面。
-4. 点击右下角的 `M` 按钮；也可以从 Tampermonkey 菜单选择“打开 MasakiClaw”。
+4. 点击右下角的 MasakiClaw 图标；也可以从 Tampermonkey 菜单选择“打开 MasakiClaw”。
 
 ## 浏览器差异
 
