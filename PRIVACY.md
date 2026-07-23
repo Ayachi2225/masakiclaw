@@ -10,13 +10,12 @@ MasakiClaw may process the following data when the user starts a capture task:
 - Zhihu comment image URLs
 - Downloaded image files
 - Comment-related metadata, such as visible comment time and author name when available
-- Local task logs
 - Duplicate detection metadata, such as normalized image URL, content hash, and visual hash
 - Optional AI-generated filename and image description
 
 ## Local Storage
 
-Captured images, task logs, duplicate reports, and `images.json` are saved to the folder selected by the user.
+Captured images, duplicate reports, and `images.json` are saved to the folder selected by the user.
 
 Extension settings and task state may be stored in local browser extension storage.
 
@@ -38,7 +37,7 @@ MasakiClaw does not sell user data.
 
 ## Data Deletion
 
-The user can delete captured images, logs, reports, and `images.json` from the local folder selected during capture.
+The user can delete captured images, reports, and `images.json` from the local folder selected during capture.
 
 The user can remove extension settings and any saved AI API key by clearing the extension's local storage or uninstalling the extension.
 
