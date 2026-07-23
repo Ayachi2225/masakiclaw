@@ -7,8 +7,9 @@ Adapt the Chrome edition's collection behaviour into one installable userscript,
 ## Compatibility contract
 
 - Preserve the Chrome edition's image discovery, filtering, scrolling, secondary-reply, AI fallback, deduplication, and `images.json` semantics.
-- Officially support the current and previous major desktop Firefox, Safari, Chrome, Edge, and Opera releases; emit ES2020 syntax.
-- Treat mobile browsers as best effort.
+- Officially support the current stable desktop Firefox, Chrome, and Edge releases; emit ES2020 syntax.
+- Treat Safari, Opera, previous major browser releases, and mobile browsers as experimental until they have recorded browser-acceptance evidence.
+- Treat experimental browsers as best effort.
 - Leave the Chrome and Edge runtime packages unchanged.
 - Bundle fixed dependency versions into the generated userscript; do not load runtime code from a CDN.
 - Declare `@connect *` so a user-configured HTTPS OpenAI-compatible endpoint remains supported. AI stays off by default.

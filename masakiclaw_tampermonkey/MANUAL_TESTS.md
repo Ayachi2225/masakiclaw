@@ -11,7 +11,7 @@
 - PENDING — 刷新控制页后显示恢复提示，确认后继续。
 - PENDING — AI、自定义 HTTPS Base URL、加密/明文/不保存 Key 三种路径。
 
-## Safari desktop
+## Safari desktop（实验性）
 
 - PENDING — 重复 Firefox desktop 的六项验收。
 - PENDING — 大型任务不会因单个 ZIP 超过约 250 MiB 而失败，必要时产生分卷。
@@ -24,7 +24,8 @@
 
 ## Compatibility details
 
-- PENDING — 当前稳定版及前一个主要版本的 Firefox、Safari 和 Chromium。
+- PENDING — 当前稳定版 Firefox、Chrome 和 Edge。
+- PENDING — 实验性 Safari、Opera、前一个主要版本及移动浏览器；通过并记录完整验收后再升级支持等级。
 - PENDING — 知乎回答、文章和想法页面；内嵌评论与评论弹窗。
 - PENDING — 默认不启用 AI；AI 失败不终止采集。
 - PENDING — URL/内容重复不保存但写入索引，视觉相似图片保存并写入报告。
